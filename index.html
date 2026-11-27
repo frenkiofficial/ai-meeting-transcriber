@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeetingLens — AI Meeting Transcriber &amp; Summarizer</title>
+<meta name="description" content="Paste a meeting transcript and get a summary, decisions, and action items with owners and due dates. Interactive demo — sample data only.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h2l2-6 3 12 3-9 2 3h6"/></svg>
+      </span>
+      <span class="brand-name">MeetingLens</span>
+    </a>
+    <nav class="topnav">
+      <a href="#tool">Summarizer</a>
+      <a href="#how">How it works</a>
+      <span class="demo-badge">Interactive demo</span>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">AI Meeting Transcriber &amp; Summarizer</p>
+    <h1>Every meeting, distilled<br>into what matters.</h1>
+    <p class="lede">Paste a transcript. Get a clear summary, the decisions that were made, and every action item with an owner and a due date — ready to copy or download. No audio upload, everything runs in your browser.</p>
+    <div class="hero-points">
+      <span>Summary in seconds</span>
+      <span>Decisions extracted</span>
+      <span>Action items with owners</span>
+      <span>Export .txt / .md</span>
+    </div>
+  </section>
+
+  <section class="tool" id="tool">
+    <div class="panel input-panel">
+      <div class="panel-head">
+        <h2>Meeting transcript</h2>
+        <span class="panel-hint">Paste or type below</span>
+      </div>
+
+      <div class="field-row">
+        <label class="field">
+          <span>Meeting title</span>
+          <input type="text" id="meetingTitle" value="Product Launch Planning" maxlength="120">
+        </label>
+        <label class="field field-narrow">
+          <span>Date</span>
+          <input type="date" id="meetingDate" value="2026-11-24">
+        </label>
+        <label class="field field-narrow">
+          <span>Duration (min)</span>
+          <input type="number" id="meetingDuration" min="1" max="480" value="42">
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Transcript <em>— one speaker per line, e.g. “Maya: …”</em></span>
+        <textarea id="transcriptInput" rows="16" placeholder="Maya: Good morning everyone, let's get started…
+Daniel: Quick update from engineering first…"></textarea>
+      </label>
+
+      <div class="input-meta">
+        <span id="charCount">0 characters</span>
+        <span id="wordCount">0 words</span>
+        <span id="speakerCount">0 speakers</span>
+      </div>
+
+      <div class="sample-row">
+        <span class="sample-label">Try a sample:</span>
+        <button type="button" class="chip" data-sample="launch">Product launch planning</button>
+        <button type="button" class="chip" data-sample="sales">Weekly sales sync</button>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="analyzeBtn">Summarize meeting</button>
+        <button type="button" class="btn btn-ghost" id="clearBtn">Clear</button>
+      </div>
+      <p class="privacy-note">Nothing leaves your browser. No recording, no upload, no account.</p>
+    </div>
+
+    <div class="panel output-panel">
+      <div class="panel-head">
+        <h2>Meeting notes</h2>
+        <span class="panel-hint" id="outputHint">Waiting for a transcript</span>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <p><strong>No notes yet.</strong></p>
+        <p>Paste a transcript on the left — or load one of the two samples — then hit <strong>Summarize meeting</strong>.</p>
+      </div>
+
+      <div class="results" id="results" hidden>
+        <div class="stats">
+          <div class="stat"><span class="stat-num" id="statDuration">–</span><span class="stat-label">Duration</span></div>
+          <div class="stat"><span class="stat-num" id="statSpeakers">–</span><span class="stat-label">Speakers</span></div>
+          <div class="stat"><span class="stat-num" id="statWords">–</span><span class="stat-label">Words</span></div>
+          <div class="stat"><span class="stat-num" id="statDecisions">–</span><span class="stat-label">Decisions</span></div>
+          <div class="stat"><span class="stat-num" id="statActions">–</span><span class="stat-label">Action items</span></div>
+        </div>
+
+        <section class="result-card">
+          <div class="result-head">
+            <h3>Summary</h3>
+            <button type="button" class="btn btn-small" data-copy="summary">Copy</button>
+          </div>
+          <div class="summary-body" id="summaryBody"></div>
+        </section>
+
+        <section class="result-card">
+          <div class="result-head">
+            <h3>Decisions</h3>
+            <button type="button" class="btn btn-small" data-copy="decisions">Copy</button>
+          </div>
+          <ul class="decision-list" id="decisionsList"></ul>
+          <p class="none-found" id="noDecisions" hidden>No explicit decisions found in this transcript.</p>
+        </section>
+
+        <section class="result-card">
+          <div class="result-head">
+            <h3>Action items</h3>
+            <button type="button" class="btn btn-small" data-copy="actions">Copy</button>
+          </div>
+          <div class="action-list" id="actionsList"></div>
+          <p class="none-found" id="noActions" hidden>No action items found in this transcript.</p>
+        </section>
+
+        <section class="result-card">
+          <div class="result-head">
+            <h3>Who talked most</h3>
+          </div>
+          <div class="speaker-bars" id="speakersList"></div>
+        </section>
+
+        <div class="export-bar">
+          <button type="button" class="btn btn-dark" id="copyAllBtn">Copy all notes</button>
+          <button type="button" class="btn" id="downloadTxtBtn">Download .txt</button>
+          <button type="button" class="btn" id="downloadMdBtn">Download .md</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <h3>Paste the transcript</h3>
+        <p>From any meeting tool — Zoom, Meet, Teams, or your own notes. One speaker per line, “Name: …” format works best.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <h3>We read it like a human would</h3>
+        <p>Key points are scored, decision language is spotted, and commitments are matched to the person who made them.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <h3>Share the notes</h3>
+        <p>Copy any section, or download the whole thing as .txt or .md and drop it straight into Slack, Notion, or email.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq">
+    <h2>Good to know</h2>
+    <div class="faq-grid">
+      <div class="faq-item">
+        <h3>Do I need to upload audio?</h3>
+        <p>No. This demo works from a text transcript. In the full version, audio is transcribed first, then summarized the same way.</p>
+      </div>
+      <div class="faq-item">
+        <h3>How are due dates found?</h3>
+        <p>Dates mentioned next to a commitment (“by Friday”, “by Dec 2”) are pulled out automatically. Anything vague is marked “No date set”.</p>
+      </div>
+      <div class="faq-item">
+        <h3>What if a line has no speaker?</h3>
+        <p>It still counts. Lines without a “Name:” prefix are grouped under the previous speaker, or “Unattributed” if there is none.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is my transcript stored anywhere?</h3>
+        <p>No. Everything in this demo runs locally in your browser. Close the tab and it is gone.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <span><strong>MeetingLens</strong> — AI Meeting Transcriber &amp; Summarizer</span>
+    <span class="footer-note">Demo with sample data. Transcripts shown are fictional examples, not real meetings.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
